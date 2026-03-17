@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Catálogo de autopiezas - Autopiezas Salamanca"/>
+  <title>Autopiezas Salamanca - Catálogo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A7%3C/text%3E%3C/svg%3E"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-mark">⚙</div>
+      <div>
+        <h1>AUTOPIEZAS SALAMANCA</h1>
+        <span class="header-subtitle">Catálogo mayorista</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="userInfo" class="user-info hidden"></div>
+      <button id="themeToggle" class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
+        <span class="theme-icon-dark">🌙</span>
+        <span class="theme-icon-light">☀️</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Auth Screens -->
+  <main id="authView" class="auth-view">
+    <div class="auth-wrapper">
+      <div class="auth-hero">
+        <div class="hero-icon">⚙</div>
+        <h2>Bienvenido al catálogo</h2>
+        <p class="muted">Consultá precios, armá tu pedido y envialo en minutos.</p>
+      </div>
+      <section class="card">
+        <div class="tabs">
+          <button class="tab active" data-tab="login">Iniciar sesión</button>
+          <button class="tab" data-tab="register">Crear cuenta</button>
+        </div>
+        <form id="loginForm" class="tab-content active" data-tab="login">
+          <label>Email
+            <input id="loginUser" type="text" placeholder="tu@email.com" required autocomplete="username"/>
+          </label>
+          <label>Contraseña
+            <input id="loginPass" type="password" placeholder="••••••••" required autocomplete="current-password"/>
+          </label>
+          <button type="submit" id="loginBtn">Entrar</button>
+          <div id="loginError" class="form-error hidden"></div>
+        </form>
+        <form id="registerForm" class="tab-content" data-tab="register">
+          <label>Email
+            <input id="regUser" type="text" placeholder="tu@email.com" required autocomplete="username"/>
+          </label>
+          <label>Contraseña
+            <input id="regPass" type="password" placeholder="••••••••" required autocomplete="new-password"/>
+          </label>
+          <label>Nombre del negocio
+            <input id="regBiz" type="text" placeholder="Ej. Taller López" required/>
+          </label>
+          <button type="submit" id="regBtn" class="secondary">Registrarme</button>
+          <div id="regError" class="form-error hidden"></div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <!-- App Screen -->
+  <main id="appView" class="app-view hidden">
+    <div class="topbar">
+      <div class="stats-bar" id="statsBar">
+        <span class="stat-pill" id="statTotal">📦 <b>0</b> productos</span>
+        <span class="stat-pill" id="statFiltered" style="display:none">🔍 <b>0</b> resultados</span>
+      </div>
+      <div class="actions">
+        <button id="btnCart" class="cart-btn" aria-label="Ver carrito de compras">
+          🛒 Carrito
+          <span class="cart-badge" id="cartCount">0</span>
+        </button>
+        <button id="btnLogout" class="danger" aria-label="Cerrar sesión">Salir</button>
+      </div>
+    </div>
+
+    <!-- Admin panel — solo visible para admin -->
+    <section class="admin-panel hidden" id="globalControls">
+      <div class="admin-header" id="adminHeaderToggle">
+        <h3>⚙ Panel de administración</h3>
+        <button id="toggleAdmin" class="icon-btn small" aria-label="Colapsar panel">▾</button>
+      </div>
+      <div class="admin-body" id="adminBody">
+
+        <!-- Tab nav dentro del admin -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" data-admin-tab="precios">💰 Precios masivos</button>
+          <button class="admin-tab" data-admin-tab="marcas">🏷 Por marca</button>
+          <button class="admin-tab" data-admin-tab="subir">📤 Subir Excel</button>
+        </div>
+
+        <!-- Tab 1: Precios masivos -->
+        <div class="admin-tab-content active" data-admin-tab="precios">
+          <p class="muted" style="margin-bottom:12px">Aplicá % de costo y ganancia a todos los productos o solo a los filtrados por búsqueda.</p>
+          <div class="admin-row">
+            <div class="admin-field">
+              <label>% costo</label>
+              <input id="globalPctCosto" type="number" min="0" max="100" step="0.01" placeholder="ej. 25" />
+            </div>
+            <div class="admin-field">
+              <label>% ganancia</label>
+              <input id="globalPctGan" type="number" min="0" max="300" step="0.01" placeholder="ej. 30" />
+            </div>
+            <div class="admin-actions">
+              <button id="applyGlobalAll">Aplicar a TODOS</button>
+              <button id="applyGlobalFiltered" class="secondary">Aplicar a FILTRADOS</button>
+            </div>
+          </div>
+          <div id="adminPriceResult" class="admin-result hidden"></div>
+        </div>
+
+        <!-- Tab 2: Por marca -->
+        <div class="admin-tab-content" data-admin-tab="marcas">
+          <p class="muted" style="margin-bottom:12px">Seleccioná una o varias marcas y aplicá % solo a esos productos. Hacé click en cada marca para seleccionarla.</p>
+          <div class="admin-row" style="margin-bottom:12px">
+            <div class="admin-field">
+              <label>% costo para marcas seleccionadas</label>
+              <input id="brandPctCosto" type="number" min="0" max="100" step="0.01" placeholder="ej. 25" />
+            </div>
+            <div class="admin-field">
+              <label>% ganancia para marcas seleccionadas</label>
+              <input id="brandPctGan" type="number" min="0" max="300" step="0.01" placeholder="ej. 30" />
+            </div>
+            <div class="admin-actions">
+              <button id="applyBrandPct">Aplicar a seleccionadas</button>
+              <button id="selectAllBrands" class="secondary">Seleccionar todas</button>
+              <button id="deselectAllBrands" class="secondary">Deseleccionar</button>
+            </div>
+          </div>
+          <div id="brandSelectionInfo" class="muted" style="margin-bottom:8px;font-size:13px">0 marcas seleccionadas (0 productos)</div>
+          <div id="brandsGrid" class="brands-grid">
+            <div class="empty">Cargando marcas...</div>
+          </div>
+          <div id="adminBrandResult" class="admin-result hidden"></div>
+        </div>
+
+        <!-- Tab 3: Subir Excel -->
+        <div class="admin-tab-content" data-admin-tab="subir">
+          <p class="muted" style="margin-bottom:12px">Subí un nuevo Excel (.xlsx) para reemplazar el catálogo completo. El Excel debe tener las columnas: <b>codigo, producto, precio_lista, porcentaje_costo, porcentaje_ganancia</b>.</p>
+          <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📁</div>
+            <p>Arrastrá el archivo acá o hacé click para seleccionar</p>
+            <input type="file" id="excelUpload" accept=".xlsx,.xls" style="display:none"/>
+            <button id="uploadBtn" class="secondary">Seleccionar archivo</button>
+          </div>
+          <div id="uploadStatus" class="hidden" style="margin-top:12px">
+            <div class="loading-indicator">
+              <div class="spinner"></div>
+              <span id="uploadStatusText">Subiendo...</span>
+            </div>
+          </div>
+          <div id="adminUploadResult" class="admin-result hidden"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="loading-indicator hidden">
+      <div class="spinner"></div>
+      <span>Cargando productos...</span>
+    </div>
+
+    <!-- Search block -->
+    <div class="search-section">
+      <div class="search-main">
+        <div class="search-icon">🔍</div>
+        <input id="searchInput" type="text" placeholder="Buscar por producto, código o marca..." aria-label="Buscar productos"/>
+        <div id="searchStatus" class="search-status hidden">
+          <div class="spinner small"></div>
+        </div>
+        <button id="clearSearch" class="clear-search hidden" aria-label="Limpiar búsqueda">✕</button>
+      </div>
+    </div>
+
+    <section class="table-wrap">
+      <table class="catalog">
+        <thead>
+          <tr>
+            <th class="sortable" data-sort="producto">Producto <span class="sort-icon">⇅</span></th>
+            <th class="sortable" data-sort="codigo">Código <span class="sort-icon">⇅</span></th>
+            <th class="num sortable" data-sort="precio_lista">P. Lista <span class="sort-icon">⇅</span></th>
+            <th class="num">% costo</th>
+            <th class="num sortable" data-sort="precio_costo">P. Costo <span class="sort-icon">⇅</span></th>
+            <th class="num">% ganancia</th>
+            <th class="num sortable" data-sort="precio_mostrador">P. Mostrador <span class="sort-icon">⇅</span></th>
+            <th class="num w-qty">Cant.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="catalogBody"></tbody>
+      </table>
+      <div id="pagination" class="pagination"></div>
+    </section>
+  </main>
+
+  <!-- Cart Modal -->
+  <div id="cartModal" class="modal hidden">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>🛒 Carrito de compras</h3>
+        <button id="closeCart" class="icon-btn">✕</button>
+      </div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-footer">
+        <div class="totals">
+          <div class="total-row"><span>Subtotal:</span> <span id="subtotalView">$0,00</span></div>
+          <div class="total-row grand"><span>Total (costo):</span> <span id="totalView">$0,00</span></div>
+        </div>
+        <div class="cart-actions">
+          <button id="btnFavLists" class="secondary" aria-label="Ver y guardar listas favoritas">⭐ Listas favoritas</button>
+          <button id="btnClearCart" class="danger" aria-label="Vaciar todo el carrito">🗑 Vaciar</button>
+          <button id="btnExportExcel" class="secondary" aria-label="Exportar carrito a Excel">📥 Exportar Excel</button>
+          <button id="btnSendGmail" aria-label="Finalizar pedido y enviar por email">📧 Finalizar y enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Add Modal -->
+  <div id="confirmModal" class="modal hidden">
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>Artículo ya en el carrito</h3>
+        <button id="confirmClose" class="icon-btn">✕</button>
+      </div>
+      <div class="confirm-body">
+        <p id="confirmText" class="muted"></p>
+        <div class="confirm-actions">
+          <button id="confirmAdd">Sumar</button>
+          <button id="confirmCancel" class="secondary">No agregar</button>
+          <button id="confirmViewCart" class="warning">Ver carrito</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll to top -->
+  <button id="scrollTop" class="scroll-top hidden" aria-label="Volver arriba">↑</button>
+
+  <footer class="footer">
+    <small>© <span id="year"></span> Autopiezas Salamanca — Catálogo digital</small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
