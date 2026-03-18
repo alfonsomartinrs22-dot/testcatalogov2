@@ -12,32 +12,38 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido.' });
 
   const { mode, pctCosto, pctGanancia, brands, search } = req.body || {};
-  const hasCosto = pctCosto !== undefined && pctCosto !== null && pctCosto !== '';
+  const hasCosto    = pctCosto    !== undefined && pctCosto    !== null && pctCosto    !== '';
   const hasGanancia = pctGanancia !== undefined && pctGanancia !== null && pctGanancia !== '';
   if (!hasCosto && !hasGanancia) return res.status(400).json({ error: 'Ingresá al menos un %.' });
 
-  // Calcula el factor multiplicador sobre precio_lista
-  // Si se ingresa pctCosto: factor = (1 + pctCosto/100)
-  // Si se ingresa pctGanancia: factor = (1 + pctGanancia/100)
-  // Si se ingresan ambos: se aplican en secuencia
-  let factor = 1;
-  if (hasCosto) factor *= (1 + Number(pctCosto) / 100);
-  if (hasGanancia) factor *= (1 + Number(pctGanancia) / 100);
+  const cv = hasCosto    ? Number(pctCosto)    : null;
+  const gv = hasGanancia ? Number(pctGanancia) : null;
 
   try {
     const sql = getSQL();
 
     if (mode === 'all') {
-      await sql`UPDATE products SET precio_lista = ROUND(precio_lista * ${factor}, 2), updated_at = NOW()`;
+      if (hasCosto && hasGanancia) await sql`UPDATE products SET porcentaje_costo=${cv}, porcentaje_ganancia=${gv}, updated_at=NOW()`;
+      else if (hasCosto)           await sql`UPDATE products SET porcentaje_costo=${cv}, updated_at=NOW()`;
+      else                         await sql`UPDATE products SET porcentaje_ganancia=${gv}, updated_at=NOW()`;
+
     } else if (mode === 'brands' && Array.isArray(brands) && brands.length) {
-      await sql`UPDATE products SET precio_lista = ROUND(precio_lista * ${factor}, 2), updated_at = NOW() WHERE SPLIT_PART(codigo, '-', 1) = ANY(${brands})`;
+      if (hasCosto && hasGanancia) await sql`UPDATE products SET porcentaje_costo=${cv}, porcentaje_ganancia=${gv}, updated_at=NOW() WHERE SPLIT_PART(codigo,'-',1)=ANY(${brands})`;
+      else if (hasCosto)           await sql`UPDATE products SET porcentaje_costo=${cv}, updated_at=NOW() WHERE SPLIT_PART(codigo,'-',1)=ANY(${brands})`;
+      else                         await sql`UPDATE products SET porcentaje_ganancia=${gv}, updated_at=NOW() WHERE SPLIT_PART(codigo,'-',1)=ANY(${brands})`;
+
     } else if (mode === 'search' && search) {
       const pat = `%${search}%`;
-      await sql`UPDATE products SET precio_lista = ROUND(precio_lista * ${factor}, 2), updated_at = NOW() WHERE LOWER(producto) LIKE LOWER(${pat}) OR LOWER(codigo) LIKE LOWER(${pat})`;
+      if (hasCosto && hasGanancia) await sql`UPDATE products SET porcentaje_costo=${cv}, porcentaje_ganancia=${gv}, updated_at=NOW() WHERE LOWER(producto) LIKE LOWER(${pat}) OR LOWER(codigo) LIKE LOWER(${pat})`;
+      else if (hasCosto)           await sql`UPDATE products SET porcentaje_costo=${cv}, updated_at=NOW() WHERE LOWER(producto) LIKE LOWER(${pat}) OR LOWER(codigo) LIKE LOWER(${pat})`;
+      else                         await sql`UPDATE products SET porcentaje_ganancia=${gv}, updated_at=NOW() WHERE LOWER(producto) LIKE LOWER(${pat}) OR LOWER(codigo) LIKE LOWER(${pat})`;
+
     } else {
       return res.status(400).json({ error: 'Modo inválido: all, brands, o search.' });
     }
 
-    return res.status(200).json({ ok: true, message: 'Precio de lista actualizado.' });
-  } catch (err) { return res.status(500).json({ error: err.message }); }
+    return res.status(200).json({ ok: true, message: 'Porcentajes actualizados.' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 };
