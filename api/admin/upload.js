@@ -25,8 +25,8 @@ module.exports = async function handler(req, res) {
       const producto = String(p.producto || '').trim();
       if (!codigo || !producto) continue;
       await sql`
-        INSERT INTO products (codigo, producto, precio_lista, porcentaje_costo, porcentaje_ganancia)
-        VALUES (${codigo}, ${producto}, ${Number(p.precio_lista)||0}, 0, 0)
+        INSERT INTO products (codigo, producto, precio_lista)
+        VALUES (${codigo}, ${producto}, ${Number(p.precio_lista)||0})
         ON CONFLICT (codigo) DO UPDATE SET
           producto = EXCLUDED.producto,
           precio_lista = EXCLUDED.precio_lista,
