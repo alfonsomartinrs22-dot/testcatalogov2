@@ -1290,16 +1290,14 @@ function parseExcel(ab){
     if(n.includes('codigo')) hm.codigo=k;
     else if(n.includes('producto')) hm.producto=k;
     else if(n.includes('preciolista')||n.includes('precio_lista')) hm.precio_lista=k;
-    else if(n.includes('porcentajecosto')||n.includes('porcentaje_costo')) hm.porcentaje_costo=k;
-    else if(n.includes('porcentajeganancia')||n.includes('porcentaje_ganancia')) hm.porcentaje_ganancia=k;
   });
-  const miss=['codigo','producto','precio_lista','porcentaje_costo','porcentaje_ganancia'].filter(r=>!hm[r]);
+  const miss=['codigo','producto','precio_lista'].filter(r=>!hm[r]);
   if(miss.length) throw new Error(`Faltan columnas: ${miss.join(', ')}`);
   const rows=[];
   for(const row of json){
     const p=(row[hm.producto]||'').toString().trim(); const c=(row[hm.codigo]||'').toString().trim();
     if(!p||!c) continue;
-    rows.push({producto:p,codigo:c,precio_lista:toNumber(row[hm.precio_lista]),porcentaje_costo:toNumber(row[hm.porcentaje_costo]),porcentaje_ganancia:toNumber(row[hm.porcentaje_ganancia])});
+    rows.push({producto:p,codigo:c,precio_lista:toNumber(row[hm.precio_lista])});
   }
   return rows;
 }
